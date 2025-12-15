@@ -20,6 +20,9 @@ minikube start --driver=docker
 
 Кластер готов к развёртыванию приложений.
 
+<img width="851" height="541" alt="Снимок экрана 2025-12-15 в 19 02 30" src="https://github.com/user-attachments/assets/bfd79270-5340-49fd-bbe4-33c0c80666f2" />
+
+
 ### Часть 2. Создание и применение манифестов
 
 **PostgreSQL:**
@@ -62,11 +65,17 @@ kubectl apply -f nextcloud-service.yml
 minikube start --driver=docker
 ```
 
+<img width="840" height="311" alt="Снимок экрана 2025-12-15 в 19 18 05" src="https://github.com/user-attachments/assets/fc356ecb-8e2b-4c06-aea7-936a544477fa" />
+
+
 ### Часть 3. Дополнительные проверки
 
 - Подтверждена работа проб: Pod переходит в состояние Ready только после успешного ответа `/status.php`.
 - Переменные окружения корректно подгружены из ConfigMap и Secret.
 - Связь между Nextcloud и PostgreSQL работает: приложение успешно подключается к БД.
+
+  <img width="1416" height="733" alt="Снимок экрана 2025-12-15 в 18 35 26" src="https://github.com/user-attachments/assets/bc59ab8a-5d2d-4d1e-9e3e-94bd72c4425f" />
+
 
 ## Ответы на вопросы
 
