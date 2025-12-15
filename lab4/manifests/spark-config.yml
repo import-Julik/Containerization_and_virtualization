@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: spark-config
+  labels:
+    app: spark
+data:
+  SPARK_WORKER_CORES: "2"
+  SPARK_WORKER_MEMORY: "1g"

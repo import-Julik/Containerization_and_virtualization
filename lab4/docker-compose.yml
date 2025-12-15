@@ -1,0 +1,103 @@
+services:
+  # INIT
+  init-wait:
+    image: alpine:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      sh -c "echo 'Starting  services'; exit 0"
+
+  #Spark Master
+  spark-master:
+    build:
+      context: ./spark
+      dockerfile: Dockerfile
+    container_name: spark-master
+    ports:
+      - "${SPARK_MASTER_PORT}:8080"
+      - "${SPARK_MASTER_RPC_PORT}:7077"
+    volumes:
+      - spark-data:/opt/spark/work-dir
+    command: >
+      /opt/spark/bin/spark-class
+      org.apache.spark.deploy.master.Master
+      --host 0.0.0.0
+      --port 7077
+      --webui-port 8080
+    networks:
+      - spark-net
+    depends_on:
+      init-wait:
+        condition: service_completed_successfully
+
+  #Spark Worker
+  spark-worker:
+    build:
+      context: ./spark
+      dockerfile: Dockerfile
+    container_name: spark-worker
+    command: >
+      /opt/spark/bin/spark-class
+      org.apache.spark.deploy.worker.Worker
+      spark://spark-master:7077
+      --cores ${SPARK_WORKER_CORES}
+      --memory ${SPARK_WORKER_MEMORY}
+    networks:
+      - spark-net
+    depends_on:
+      spark-master:
+        condition: service_started
+
+  #PostgreSQL
+  postgres:
+    image: postgres:15
+    container_name: spark-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - spark-net
+
+  #Jupyter Notebook с PySpark
+  jupyter-notebook:
+    build:
+      context: ./jupyter
+      dockerfile: Dockerfile
+    container_name: spark-jupyter
+    ports:
+      - "${JUPYTER_PORT}:8888"
+    volumes:
+      - jupyter-data:/home/jovyan/work
+    environment:
+      - JUPYTER_TOKEN=${JUPYTER_TOKEN}
+      - SPARK_MASTER_URL=spark://spark-master:7077
+    command: >
+      start-notebook.sh --NotebookApp.token='${JUPYTER_TOKEN}'
+    networks:
+      - spark-net
+    depends_on:
+      spark-master:
+        condition: service_started
+
+#Volumes
+volumes:
+  spark-data:
+  postgres-data:
+  jupyter-data:
+
+# Networks
+networks:
+  spark-net:
+    name: spark-network
+    driver: bridge
